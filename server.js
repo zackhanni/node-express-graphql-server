@@ -13,7 +13,7 @@ const { books, authors } = require("./mockData");
 const app = express();
 
 const AuthorType = new GraphQLObjectType({
-  name: "Authors",
+  name: "Author",
   description: "Authors who have written books",
   // use a function to make sure data is is available. both BookType and AuthorType reference each other
   fields: () => ({
@@ -90,12 +90,42 @@ const RootMutationType = new GraphQLObjectType({
         authorId: { type: GraphQLNonNull(GraphQLInt) },
       },
       resolve: (parent, args) => {
+        const authorExists = authors.find(
+          (author) => author.id === args.authorId
+        );
+        if (!authorExists) {
+          throw new Error(`Author with id ${args.authorId} does not exist`);
+        }
+
         const book = {
           id: books.length + 1,
           name: args.name,
           authorId: args.authorId,
         };
         books.push(book);
+        return book;
+      },
+    },
+    editBook: {
+      type: BookType,
+      description: "Edit book details",
+      args: {
+        id: { type: GraphQLNonNull(GraphQLInt) },
+        name: { type: GraphQLString }, // Fields are optional for editing
+        authorId: { type: GraphQLInt },
+      },
+      resolve: (parent, args) => {
+        const book = books.find((book) => book.id === args.id);
+        if (!book) {
+          throw new Error(`Book with id ${args.id} not found`);
+        }
+
+        if (args.name !== undefined) {
+          book.name = args.name;
+        }
+        if (args.authorId !== undefined) {
+          book.authorId = args.authorId;
+        }
         return book;
       },
     },
@@ -111,6 +141,24 @@ const RootMutationType = new GraphQLObjectType({
           name: args.name,
         };
         authors.push(author);
+        return author;
+      },
+    },
+    editAuthor: {
+      type: AuthorType,
+      description: "Edit an author",
+      args: {
+        id: { type: GraphQLNonNull(GraphQLInt) },
+        name: { type: GraphQLString },
+      },
+      resolve: (parent, args) => {
+        const author = authors.find((author) => author.id === args.id);
+        if (!author) {
+          throw new Error(`Author with id ${args.id} not found`);
+        }
+        if (args.name !== undefined) {
+          author.name = args.name;
+        }
         return author;
       },
     },
