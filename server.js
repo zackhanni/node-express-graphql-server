@@ -15,6 +15,7 @@ const app = express();
 const AuthorType = new GraphQLObjectType({
   name: "Authors",
   description: "Authors who have written books",
+  // use a function to make sure data is is available. both BookType and AuthorType reference each other
   fields: () => ({
     id: { type: GraphQLNonNull(GraphQLInt) },
     name: { type: GraphQLNonNull(GraphQLString) },
@@ -59,6 +60,15 @@ const RootQueryType = new GraphQLObjectType({
       type: new GraphQLList(BookType),
       description: "List of books",
       resolve: () => books,
+    },
+    author: {
+      type: AuthorType,
+      description: "A single author",
+      args: {
+        id: { type: GraphQLInt },
+      },
+      resolve: (parent, args) =>
+        authors.find((author) => author.id === args.id),
     },
     authors: {
       type: new GraphQLList(AuthorType),
